@@ -179,6 +179,7 @@
     </style>
 </head>
 <body>
+    <script src="auth-guard.js"></script>
     <div class="container">
         <div class="header">
             <h1>Faculty Members</h1>
@@ -193,7 +194,9 @@
     <script>
         // Generate faculty cards from data
         const facultyGrid = document.getElementById('facultyGrid');
-        facultyData.forEach((faculty, index) => {
+        [...facultyData]
+            .sort((a, b) => a.id - b.id)
+            .forEach((faculty, index) => {
             const card = document.createElement('a');
             card.href = `faculty-detail.html?id=${faculty.id}`;
             card.className = 'faculty-card';
@@ -222,8 +225,8 @@
 
             card.style.background = cardBg;
             
-            facultyGrid.appendChild(card);
-        });
+                facultyGrid.appendChild(card);
+            });
     </script>
     <script src="dpniti-widget.js"></script>
 </body>

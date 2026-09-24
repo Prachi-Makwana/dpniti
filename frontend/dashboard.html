@@ -37,7 +37,7 @@
     <!-- Hero Section -->
     <section class="hero" id="home">
         <div class="hero-content">
-            <h1 class="hero-title">Welcome to 2027 Batch</h1>
+            <h1 class="hero-title">Welcome to CSE Batch</h1>
         
             <div class="hero-decoration">
                 <div class="circle circle-1"></div>
@@ -73,7 +73,7 @@
                                 <div class="slide-caption">Academic Calendar</div>
                             </div>
                             <div class="slide">
-                                <img src="images/academic/movingacad_cal.jpg" 
+                                <img src="images/academic/movingacad_cal.jpeg" 
                                      onerror="this.src='https://via.placeholder.com/400x300/6B5E7D/F1EADA?text=Academic+Calendar+Image'" 
                                      alt="Academic Calendar">
                                 <div class="slide-caption">Academic Calendar</div>
@@ -237,7 +237,7 @@
                     <button class="action-btn" onclick="location.href='faculty.html'">View Faculty</button>
                 </div>
 
-                <div class="action-card students-card">
+                <div class="action-card students-card" data-staff-only>
                     <div class="action-icon" style="background: #2F3B22; border-radius: 50%; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;">
                         <svg viewBox="0 0 64 64" fill="white" style="width: 70px; height: 70px;">
                             <!-- Graduation cap -->
@@ -274,6 +274,7 @@
 
     <script src="config.js"></script>
     <script src="dashboard.js?v=3"></script>
+    <script src="auth-guard.js"></script>
     <script src="dpniti-widget.js"></script>
 </body>
 </html>

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   # ─── MySQL Database ───────────────────────────────────
@@ -14,10 +12,9 @@ services:
       MYSQL_PASSWORD: dpniti_pass
     volumes:
       - db_data:/var/lib/mysql
-      - ./frontend/auth_db.sql:/docker-entrypoint-initdb.d/01_auth.sql
-      - ./chatbot/dpniti.sql:/docker-entrypoint-initdb.d/02_dpniti.sql
-    ports:
-      - "3306:3306"
+      # CHANGED: login_schema.sql replaces the old frontend/auth_db.sql (users table)
+      - ./database/login_schema.sql:/docker-entrypoint-initdb.d/01_login_schema.sql
+        # Removed db7.sql to prevent chatbot's INSERT-only parsed data dump from executing
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
@@ -35,6 +32,9 @@ services:
       DB_PASSWORD: dpniti_pass
       DB_DATABASE: auth_db
       NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}   # ADDED: set a long random value in your .env
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost}   # ADDED: exact origin(s) allowed to send credentials
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}   # ADDED: set to "true" only once served over real HTTPS
     depends_on:
       db:
         condition: service_healthy
@@ -52,11 +52,12 @@ services:
       DB_PASSWORD: dpniti_pass
       DB_DATABASE: dpniti
       LANGFUSE_ENABLED: "true"
-      
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
-      # Add your OpenRouter key here:
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-${GEMINI_API_KEY}}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}   # ADDED: same secret as backend, so it can verify tokens too
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost}   # ADDED: exact origin(s) allowed to send credentials
     depends_on:
       db:
         condition: service_healthy

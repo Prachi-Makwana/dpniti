@@ -201,6 +201,7 @@
     </style>
 </head>
 <body>
+    <script src="auth-guard.js"></script>
     <main class="profile-shell">
         <section class="profile-header">
             <h1>Profile</h1>
@@ -258,10 +259,8 @@
         }
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userEmail');
-            window.location.href = 'index.html';
+            localStorage.clear();
+            window.location.replace('login/index.html');
         });
     </script>
     <script src="dpniti-widget.js"></script>

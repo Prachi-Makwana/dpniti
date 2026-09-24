@@ -2,32 +2,92 @@
     // Use CONFIG.API_URL from config.js, or fallback to Python service
     const PYTHON_API_URL = typeof CONFIG !== 'undefined' ? (CONFIG.PYTHON_API_URL || 'http://localhost:5001') : 'http://localhost:5001';
     const SESSION_ID = 'dpniti_' + Math.random().toString(36).slice(2);
+    const CHAT_STORAGE_KEY = 'dpniti_chat_messages';
+    let conversationVersion = 0;
 
-    function createMessage(text, who) {
+    function formatISTTime(timestamp) {
+        return new Intl.DateTimeFormat('en-IN', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Kolkata'
+        }).format(new Date(timestamp));
+    }
+
+    function createMessage(text, who, timestamp) {
         const msg = document.createElement('div');
         msg.className = 'dpniti-msg ' + who;
-        msg.textContent = text;
+        msg.dataset.messageText = text;
+        msg.dataset.timestamp = timestamp || new Date().toISOString();
+
+        const content = document.createElement('span');
+        content.className = 'dpniti-msg-content';
+        content.textContent = text;
+        msg.appendChild(content);
+
+        if (!who.includes('typing')) {
+            const time = document.createElement('span');
+            time.className = 'dpniti-msg-time';
+            time.textContent = formatISTTime(msg.dataset.timestamp);
+            msg.appendChild(time);
+        }
+
         return msg;
     }
 
     async function botReply(userText, body) {
-        const typing = createMessage('DPniti is thinking...', 'bot typing');
-        body.appendChild(typing);
-        body.scrollTop = body.scrollHeight;
+    const replyVersion = conversationVersion;
+    const typing = createMessage('DPniti is thinking...', 'bot typing');
+    body.appendChild(typing);
+    body.scrollTop = body.scrollHeight;
+    try {
+        const res  = await fetch(PYTHON_API_URL + '/chat', {
+            method: 'POST',
+            credentials: 'include', // sends the httpOnly auth cookie; no token in JS anymore
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                message: userText, 
+                session_id: SESSION_ID,
+                user_name: localStorage.getItem('userName') || null,
+                role: localStorage.getItem('role') || null,
+                batch: localStorage.getItem('batch') || null,
+                allowed_sem: localStorage.getItem('allowedSem') ? Number(localStorage.getItem('allowedSem')) : null
+            })
+        });
+        const data = await res.json();
+        if (replyVersion !== conversationVersion) return;
+        typing.remove();
+        body.appendChild(createMessage(data.reply, 'bot'));
+        saveConversation(body);
+    } catch (e) {
+        if (replyVersion !== conversationVersion) return;
+        typing.remove();
+        body.appendChild(createMessage('Could not reach AI server. Make sure chatbot_api.py is running on port 5001.', 'bot'));
+        saveConversation(body);
+    }
+    body.scrollTop = body.scrollHeight;
+}
+
+    function saveConversation(body) {
+        const messages = Array.from(body.querySelectorAll('.dpniti-msg:not(.typing)')).map(function (message) {
+            return {
+                text: message.dataset.messageText,
+                who: message.classList.contains('user') ? 'user' : 'bot',
+                timestamp: message.dataset.timestamp
+            };
+        });
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    }
+
+    function loadConversation() {
         try {
-            const res  = await fetch(PYTHON_API_URL + '/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userText, session_id: SESSION_ID })
-            });
-            const data = await res.json();
-            typing.remove();
-            body.appendChild(createMessage(data.reply, 'bot'));
+            const messages = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '[]');
+            return Array.isArray(messages) ? messages : [];
         } catch (e) {
-            typing.remove();
-            body.appendChild(createMessage('Could not reach AI server. Make sure chatbot_api.py is running on port 5001.', 'bot'));
+            return [];
         }
-        body.scrollTop = body.scrollHeight;
     }
 
     function initWidget() {
@@ -103,7 +163,19 @@
 
         const body = document.createElement('div');
         body.className = 'dpniti-chat-body';
-        body.appendChild(createMessage('Hii i am DPniti! Ask me anything about students, faculty, timetables or subjects.', 'bot'));
+        const savedMessages = loadConversation();
+        if (savedMessages.length) {
+            savedMessages.forEach(function (message) {
+                body.appendChild(createMessage(message.text, message.who, message.timestamp));
+            });
+        } else {
+            body.appendChild(createMessage('Hii i am DPniti! Ask me anything about students, faculty, timetables or subjects.', 'bot'));
+            saveConversation(body);
+        }
+
+        const disclaimer = document.createElement('div');
+        disclaimer.className = 'dpniti-disclaimer';
+        disclaimer.textContent = 'DPniti can make mistakes. Check important info.';
 
         const inputRow = document.createElement('div');
         inputRow.className = 'dpniti-chat-input';
@@ -115,7 +187,7 @@
         const send = document.createElement('button');
         send.type = 'button';
         send.className = 'dpniti-send-btn';
-        send.innerHTML = '<span aria-hidden="true">&#8599;</span>';
+        send.innerHTML = '<span aria-hidden="true">&#10148;</span>';
         send.setAttribute('aria-label', 'Send message');
 
         inputRow.appendChild(input);
@@ -123,6 +195,7 @@
 
         panel.appendChild(header);
         panel.appendChild(body);
+        panel.appendChild(disclaimer);
         panel.appendChild(inputRow);
 
         root.appendChild(panel);
@@ -145,17 +218,21 @@
             body.appendChild(createMessage(text, 'user'));
             input.value = '';
             body.scrollTop = body.scrollHeight;
+            saveConversation(body);
             botReply(text, body);
         }
 
         resetBtn.addEventListener('click', async function () {
+                conversationVersion += 1;
             await fetch(PYTHON_API_URL + '/reset', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ session_id: SESSION_ID })
             }).catch(() => {});
             body.innerHTML = '';
             body.appendChild(createMessage('Chat reset! How can I help you?', 'bot'));
+            saveConversation(body);
         });
 
         fab.addEventListener('click', openPanel);

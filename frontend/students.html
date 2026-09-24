@@ -207,6 +207,7 @@
 </head>
 
 <body>
+    <script src="auth-guard.js"></script>
 
 <div class="container">
     <div class="header">
@@ -251,8 +252,11 @@
 <script>
     function openStudentList(division) {
         const filename = `Div-${division}_Students_List.pdf`;
-        window.open(`documents/${filename}`, '_blank');
+        window.location.href = `documents/${filename}`;
     }
+</script>
+<script>
+    if (localStorage.getItem('role') === 'student') window.location.replace('dashboard.html');
 </script>
 <script src="dpniti-widget.js"></script>
 

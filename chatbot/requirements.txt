@@ -1,10 +1,10 @@
-flask
-flask-cors
-sentence-transformers
-faiss-cpu
+fastapi
+uvicorn[standard]
+pydantic
 requests
-langfuse>=2.0,<3.0
-mysql-connector-python
+langfuse>=4.0,<5.0
 python-dotenv
 numpy
 openai
+mcp
+PyJWT

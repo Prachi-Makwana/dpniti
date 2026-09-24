@@ -1,194 +1,176 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
-const pool = require('./db');
+const jwt = require('jsonwebtoken');
+const mysql = require('mysql2/promise');
 
 const app = express();
+const port = Number(process.env.PORT || 5000);
+const jwtSecret = process.env.JWT_SECRET;
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+const useSecureCookie = String(process.env.COOKIE_SECURE || 'false').toLowerCase() === 'true';
 
-// Middleware
-app.use(cors());
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET must be configured');
+}
+if (!process.env.DB_PASSWORD) {
+  throw new Error('DB_PASSWORD must be configured');
+}
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE || 'auth_db',
+  waitForConnections: true,
+  connectionLimit: 10,
+});
+
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// Routes
+const COOKIE_NAME = 'authToken';
+const COOKIE_MAX_AGE_MS = 8 * 60 * 60 * 1000; // 8h, matches JWT expiry below
 
-// ============================================
-// SIGNUP ENDPOINT
-// ============================================
-app.post('/api/auth/signup', async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
+function setAuthCookie(res, token) {
+  res.cookie(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: useSecureCookie,   // set COOKIE_SECURE=true once you're behind real HTTPS
+    sameSite: 'lax',
+    maxAge: COOKIE_MAX_AGE_MS,
+    path: '/',
+  });
+}
 
-        // Validation
-        if (!name || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'All fields are required'
-            });
-        }
+app.get('/api/health', (_req, res) => res.json({ success: true }));
 
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid email format'
-            });
-        }
+function semesterFromUsername(username) {
+  const normalized = username.trim().toLowerCase();
+  if (normalized.startsWith('23bcp')) return 7;
+  if (normalized.startsWith('24bcp')) return 5;
+  return null;
+}
 
-        // Validate password length
-        if (password.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: 'Password must be at least 6 characters'
-            });
-        }
+// Very small in-memory rate limiter for login attempts, keyed by IP.
+// Fine for a single-instance deployment; swap for a real store (e.g. redis)
+// if you ever run more than one backend instance.
+const loginAttempts = new Map(); // ip -> { count, firstAttemptAt }
+const LOGIN_WINDOW_MS = 1 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 3;
 
-        // Get connection from pool
-        const connection = await pool.getConnection();
+function loginRateLimiter(req, res, next) {
+  const ip = req.ip;
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
 
-        try {
-            // Check if email already exists
-            const [existingUser] = await connection.query(
-                'SELECT * FROM users WHERE email = ?',
-                [email]
-            );
+  if (!entry || now - entry.firstAttemptAt > LOGIN_WINDOW_MS) {
+    loginAttempts.set(ip, { count: 1, firstAttemptAt: now });
+    return next();
+  }
 
-            if (existingUser.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Email already registered. Please login or use a different email'
-                });
-            }
-
-            // Hash password
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-
-            // Insert user into database
-            await connection.query(
-                'INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, NOW())',
-                [name, email, hashedPassword]
-            );
-
-            res.status(201).json({
-                success: true,
-                message: 'Account created successfully! You can now login.'
-            });
-
-        } finally {
-            connection.release();
-        }
-
-    } catch (error) {
-        console.error('Signup error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error. Please try again later.'
-        });
-    }
-});
-
-// ============================================
-// LOGIN ENDPOINT
-// ============================================
-app.post('/api/auth/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        // Validation
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email and password are required'
-            });
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid email format'
-            });
-        }
-
-        // Get connection from pool
-        const connection = await pool.getConnection();
-
-        try {
-            // Find user by email
-            const [users] = await connection.query(
-                'SELECT * FROM users WHERE email = ?',
-                [email]
-            );
-
-            if (users.length === 0) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Invalid credentials'
-                });
-            }
-
-            const user = users[0];
-
-            // Compare password with hashed password
-            const isPasswordValid = await bcrypt.compare(password, user.password);
-
-            if (!isPasswordValid) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Invalid credentials'
-                });
-            }
-
-            // Successful login
-            res.status(200).json({
-                success: true,
-                message: 'Login successful!',
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email
-                },
-                token: 'auth_token_' + user.id // Simple token (can be improved with JWT)
-            });
-
-        } finally {
-            connection.release();
-        }
-
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error. Please try again later.'
-        });
-    }
-});
-
-// ============================================
-// HEALTH CHECK ENDPOINT
-// ============================================
-app.get('/api/health', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'Server is running'
+  if (entry.count >= LOGIN_MAX_ATTEMPTS) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too many login attempts. Please try again in a few minutes.',
     });
-});
+  }
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(500).json({
+  entry.count += 1;
+  next();
+}
+
+app.post('/api/auth/login', loginRateLimiter, async (req, res) => {
+  const username = String(req.body?.username || '').trim();
+  const password = String(req.body?.password || '');
+
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: 'Username and password are required.' });
+  }
+
+  try {
+    const [rows] = await pool.execute(
+      'SELECT id, username, password_hash, display_name, role, semester, active FROM users WHERE username = ? LIMIT 1',
+      [username]
+    );
+    const user = rows[0];
+    const valid = user && user.active && await bcrypt.compare(password, user.password_hash);
+
+    if (!valid) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
+
+    const prefixSemester = user.role === 'student' ? semesterFromUsername(user.username) : null;
+    if (prefixSemester !== null && user.semester !== prefixSemester) {
+      return res.status(409).json({
         success: false,
-        message: 'An unexpected error occurred'
+        message: `Account semester does not match its username prefix. Expected semester ${prefixSemester}.`,
+      });
+    }
+    const allowedSemester = user.role === 'student'
+      ? (prefixSemester ?? user.semester)
+      : null;
+
+    const claims = {
+      sub: String(user.id),
+      username: user.username,
+      name: user.display_name,
+      role: user.role,
+      allowed_sem: allowedSemester,
+    };
+    const token = jwt.sign(claims, jwtSecret, { expiresIn: '8h' });
+
+    // Successful login clears any rate-limit strikes for this IP.
+    loginAttempts.delete(req.ip);
+
+    setAuthCookie(res, token);
+
+    // Non-sensitive fields the frontend uses for UI only. The actual
+    // authority for role/allowedSem is always the signed JWT the server
+    // re-checks on every request, not these values.
+    return res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.display_name,
+        role: user.role,
+        allowedSem: claims.allowed_sem,
+      },
     });
+  } catch (error) {
+    console.error('Login failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Authentication service is unavailable.' });
+  }
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log(`Make sure MySQL is running and database is set up`);
+// Called by Nginx's auth_request for every protected page, and by the
+// frontend on load to know whether the session is still valid.
+app.get('/api/auth/verify', (req, res) => {
+  const token = req.cookies?.[COOKIE_NAME];
+  if (!token) {
+    return res.status(401).json({ success: false });
+  }
+  try {
+    const claims = jwt.verify(token, jwtSecret);
+    // Nginx's auth_request only cares about the status code, but returning
+    // the claims here also lets the frontend call this endpoint directly
+    // to refresh its own copy of role/name for the UI.
+    return res.json({ success: true, user: claims });
+  } catch (error) {
+    return res.status(401).json({ success: false });
+  }
 });
+
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie(COOKIE_NAME, { path: '/' });
+  return res.json({ success: true });
+});
+
+app.listen(port, () => console.log(`Auth API running on http://localhost:${port}`));

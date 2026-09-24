@@ -77,7 +77,7 @@ function generateCalendars() {
 
 // Function to open Academic Calendar PDF
 function openCalendarPDF() {
-    window.open('documents/acad_cal.pdf', '_blank');
+    window.location.href = 'documents/acad_cal.pdf';
 }
 
 // Function to open Division Timetable
@@ -98,7 +98,7 @@ function openDivisionTimetable() {
     
     // Open the timetable image in full size
     if (currentImage) {
-        window.open(currentImage, '_blank');
+        window.location.href = currentImage;
     }
 }
 
@@ -111,13 +111,13 @@ function openExamFileFromSlider() {
         if (slide.classList.contains('active')) {
             if (index === 0) {
                 // IA
-                window.open('images/academic/ia.jpeg', '_blank');
+                window.location.href = 'images/academic/ia.jpeg';
             } else if (index === 1) {
                 // MIDS
-                window.open('documents/mids2026.pdf', '_blank');
+                window.location.href = 'documents/mids2026.pdf';
             } else if (index === 2) {
                 // ENDS
-                window.open('images/academic/ends.jpeg', '_blank');
+                window.location.href = 'images/academic/ends.jpeg';
             }
         }
     });
@@ -136,13 +136,13 @@ function openExamFile(type) {
     }
     
     if (fileUrl) {
-        window.open(fileUrl, '_blank');
+        window.location.href = fileUrl;
     }
 }
 
 // Function to open Holiday PDF
 function openHolidayPDF() {
-    window.open('documents/holiday.pdf', '_blank');
+    window.location.href = 'documents/holiday.pdf';
 }
 
 // Initialize all sliders

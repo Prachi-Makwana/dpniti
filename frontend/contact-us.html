@@ -8,233 +8,230 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 
 <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+:root {
+    --moss: #2C3424;
+    --cypress: #4C5B3E;
+    --olive: #768064;
+    --cedar: #9B9581;
+    --aloe: #DADED8;
+    --paper: #f8faf7;
 }
 
-:root{
-    --moss:#2C3424;
-    --cypress:#4C5B3E;
-    --olive:#768064;
-    --cedar:#9B9581;
-    --aloe:#DADED8;
+body {
+    min-height: 100vh;
+    padding: 0 7% 28px;
+    font-family: 'Poppins', sans-serif;
+    color: var(--moss);
+    background: linear-gradient(135deg, var(--aloe) 0%, #bfc8ba 48%, var(--cedar) 100%);
 }
 
-body{
-    font-family:'Poppins', sans-serif;
-    height:100vh;
-    overflow:hidden;
-    background:linear-gradient(135deg, #DADED8 0%, #9B9581 100%);
-    display:grid;
-    grid-template-rows:14vh 34vh 6vh 34vh 12vh;
+.navbar {
+    width: 100vw;
+    margin: 0 0 16px calc(50% - 50vw);
+    background: var(--cedar);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+.nav-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--moss);
+    text-decoration: none;
+}
+.nav-logo img { width: 50px; height: 50px; border-radius: 10px; }
+.logo-text { font-size: 1.5rem; font-weight: 700; }
+.nav-menu { display: flex; align-items: center; gap: 2rem; }
+.nav-link {
+    color: var(--paper);
+    text-decoration: none;
+    font-weight: 600;
+    position: relative;
+}
+.nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 0;
+    height: 2px;
+    background: var(--paper);
+    transition: width 0.25s ease;
+}
+.nav-link:hover::after,
+.nav-link.active::after { width: 100%; }
+
+.header { text-align: center; margin-bottom: 16px; }
+.header h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 3vw, 2.4rem); }
+.header p { margin-top: 6px; color: var(--cypress); }
+.header::after {
+    content: '';
+    display: block;
+    width: 72px;
+    height: 3px;
+    margin: 8px auto 0;
+    background: var(--cypress);
+    border-radius: 2px;
 }
 
-/* ===== HEADER ===== */
-
-.header{
-    height:auto;
-    background:var(--aloe);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.header h1{
-    font-family:'Playfair Display', serif;
-    font-size:2.8rem;
-    color:var(--moss);
+.team-card {
+    min-height: 360px;
+    padding: 20px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: rgba(248, 250, 247, 0.94);
+    border: 1px solid rgba(76, 91, 62, 0.16);
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(44, 52, 36, 0.16);
 }
 
-.header p{
-    font-size:1rem;
-    color:var(--olive);
+.profile-photo-frame,
+.diya-photo-frame {
+    width: 172px;
+    height: 172px;
+    flex: 0 0 172px;
+    margin-bottom: 22px;
+    border: 4px solid var(--aloe);
+    border-radius: 50%;
+    background: var(--cypress);
+    overflow: hidden;
 }
 
-/* ===== SECTION COMMON ===== */
-
-.section{
-    height:auto;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:6%;
-    padding:0 10%;
+.profile-photo {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
 }
 
-/* ===== DIYA ===== */
-
-.top{
-    background:var(--cedar);
+.prachi-photo {
+    transform: scale(2.8);
+    transform-origin: 50% 30%;
 }
 
-/* ===== PRACHI ===== */
-
-.bottom{
-    background:var(--aloe);
+.azriel-photo {
+    transform: scale(2.55);
+    transform-origin: 50% 34%;
+    position: relative;
+    top: -8px;
 }
 
-/* ===== CONTENT ===== */
-
-.content{
-    width:42%;
-    max-width:420px;
+.diya-photo {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    left: -16px;
+    top: -14px;
+    object-fit: cover;
+    transform: scale(2.4);
+    transform-origin: 50% 30%;
 }
 
-.content h2{
-    font-family:'Playfair Display', serif;
-    font-size:2rem;
-    margin-bottom:10px;
+.team-card h2 { font-family: 'Playfair Display', serif; font-size: 1.55rem; }
+.role { min-height: 48px; margin-top: 5px; color: var(--cypress); font-weight: 500; }
+.contact-details { margin-top: auto; padding-top: 20px; font-size: 0.9rem; }
+.contact-details strong { display: block; margin-top: 7px; color: var(--cypress); }
+.contact-link { color: var(--moss); text-decoration: none; overflow-wrap: anywhere; }
+.contact-link:hover { color: var(--olive); text-decoration: underline; }
+
+.back-section { display: flex; justify-content: center; margin-top: 32px; }
+.back-btn {
+    padding: 11px 26px;
+    color: var(--paper);
+    background: var(--moss);
+    border-radius: 24px;
+    font-weight: 500;
+    text-decoration: none;
 }
+.back-btn:hover { background: var(--cypress); }
 
-.content p{
-    margin-bottom:10px;
+@media (max-width: 850px) {
+    .team-grid { grid-template-columns: 1fr; max-width: 430px; }
+    .team-card { min-height: 0; }
+    .role { min-height: 0; }
 }
-
-.content strong{
-    display:block;
-    margin-top:8px;
-}
-
-.contact-link{
-    color:inherit;
-    text-decoration:none;
-    transition:color 0.2s ease, text-decoration-color 0.2s ease;
-}
-
-.contact-link:hover{
-    color:var(--moss);
-    text-decoration:underline;
-    cursor:pointer;
-}
-
-/* ===== BLOB IMAGE ===== */
-
-.image-wrapper{
-    width:42%;
-    display:flex;
-    justify-content:center;
-}
-
-.blob{
-    width:260px;
-    height:260px;
-    background:var(--cedar);
-    border-radius:60% 40% 55% 45% / 55% 60% 40% 45%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.blob img{
-    width:210px;
-    height:210px;
-    border-radius:50%;
-    object-fit:cover;
-}
-
-/* ===== WAVE ===== */
-
-.wave{
-    height:6vh;
-    background:var(--aloe);
-}
-
-.wave svg{
-    display:block;
-    width:100%;
-    height:100%;
-}
-
-/* ===== BACK BUTTON ===== */
-
-.back-section{
-    height:auto;
-    background:var(--aloe);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.back-btn{
-    padding:12px 30px;
-    background:var(--moss);
-    color:white;
-    text-decoration:none;
-    border-radius:30px;
-    font-weight:500;
-}
-
-.back-btn:hover{
-    background:var(--cypress);
-}
-
 </style>
 <link rel="stylesheet" href="dpniti-widget.css">
 </head>
 <body>
+<script src="auth-guard.js"></script>
 
-<!-- ===== HEADER ===== -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a class="nav-logo" href="dashboard.html">
+            <img src="images/extra/pdeu.png" alt="PDEU Logo">
+            <span class="logo-text">PDEU</span>
+        </a>
+        <div class="nav-menu">
+            <a href="dashboard.html" class="nav-link">Home</a>
+            <a href="about-us.html" class="nav-link">About Us</a>
+            <a href="contact-us.html" class="nav-link active">Contact Us</a>
+        </div>
+    </div>
+</nav>
 
 <div class="header">
     <h1>Contact Us</h1>
-    <p>Get in touch with the coordinators</p>
+    <p>meet the coordinators</p>
 </div>
 
-<!-- ===== DIYA ===== -->
-
-<div class="section top">
-
-    <div class="content">
+<main class="team-grid">
+    <article class="team-card">
+        <div class="diya-photo-frame">
+            <img class="diya-photo" src="images/extra/diya.jpeg" alt="Diya Gor">
+        </div>
         <h2>Diya Gor</h2>
-        <strong>Email:</strong> <a class="contact-link" href="mailto:diyagor08@gmail.com">diyagor08@gmail.com</a>
-        <strong>Phone:</strong> <a class="contact-link" href="tel:7383854388">7383854388</a>
-    </div>
-
-    <div class="image-wrapper">
-        <div class="blob">
-            <img src="images/extra/diya.jpeg" alt="Diya">
+        <p class="role">CSE Student</p>
+        <div class="contact-details">
+            <strong>Email</strong>
+            <a class="contact-link" href="mailto:diyagor08@gmail.com">diyagor08@gmail.com</a>
         </div>
-    </div>
+    </article>
 
-</div>
-
-<!-- ===== WAVE DIVIDER ===== -->
-
-<div class="wave">
-<svg viewBox="0 0 1440 320" preserveAspectRatio="none">
-    <path fill="#DADED8"
-    d="M0,96L80,112C160,128,320,160,480,170.7C640,181,800,171,960,160C1120,149,1280,139,1360,133.3L1440,128L1440,0L0,0Z">
-    </path>
-</svg>
-</div>
-
-<!-- ===== PRACHI ===== -->
-
-<div class="section bottom">
-
-    <div class="image-wrapper">
-        <div class="blob">
-            <img src="images/extra/prachi.jpeg" alt="Prachi">
+    <article class="team-card">
+        <div class="profile-photo-frame">
+            <img class="profile-photo prachi-photo" src="images/extra/prachi.jpeg" alt="Prachi Makwana">
         </div>
-    </div>
-
-    <div class="content">
         <h2>Prachi Makwana</h2>
-        <strong>Email:</strong> <a class="contact-link" href="mailto:prachimakwana14@gmail.com">prachimakwana14@gmail.com</a>
-        <strong>Phone:</strong> <a class="contact-link" href="tel:9328772139">9328772139</a>
-    </div>
+        <p class="role">CSE Student</p>
+        <div class="contact-details">
+            <strong>Email</strong>
+            <a class="contact-link" href="mailto:prachimakwana14@gmail.com">prachimakwana14@gmail.com</a>
+        </div>
+    </article>
 
-</div>
-
-<!-- ===== BACK BUTTON ===== -->
-
-<div class="back-section">
-    <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
-</div>
+    <article class="team-card">
+        <div class="profile-photo-frame">
+            <img class="profile-photo azriel-photo" src="images/extra/azrielhenry.jpeg" alt="Azriel Henry">
+        </div>
+        <h2>Dr. Azriel Henry</h2>
+        <p class="role">Faculty Mentor @ CSE</p>
+        <div class="contact-details">
+            <strong>Email</strong>
+            <a class="contact-link" href="mailto:Azriel.Henry@sot.pdpu.ac.in">Azriel.Henry@sot.pdpu.ac.in</a>
+        </div>
+    </article>
+</main>
 
 </body>
 <script src="dpniti-widget.js"></script>
